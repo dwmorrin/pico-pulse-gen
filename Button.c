@@ -8,9 +8,12 @@
 void ButtonInit(struct Button *b)
 {
     gpio_init(b->pin);
-    gpio_init(b->led_pin);
     gpio_set_dir(b->pin, GPIO_IN);
-    gpio_set_dir(b->led_pin, GPIO_OUT);
+    if (!b->no_led)
+    {
+        gpio_init(b->led_pin);
+        gpio_set_dir(b->led_pin, GPIO_OUT);
+    }
 }
 
 void ButtonUpdate(struct Button *b)
@@ -29,8 +32,10 @@ void ButtonUpdate(struct Button *b)
         b->active = !b->active;
         b->release_delaying = true;
         b->delay_count = 0;
-        gpio_put(b->led_pin, b->active);
+        if (!b->no_led)
+            gpio_put(b->led_pin, b->active);
         b->last_press_time = NOW();
+        b->pressed_flag = true;
         printf("Button %d pressed\n", b->pin);
     }
     else if (b->pressed)
@@ -47,6 +52,7 @@ void ButtonUpdate(struct Button *b)
             if (!pin_is_high)
             {
                 b->pressed = false;
+                b->pressed_flag = false;
                 b->delay_count = 0;
                 b->release_delaying = true;
                 printf("Button %d released\n", b->pin);

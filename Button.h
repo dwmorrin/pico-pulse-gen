@@ -9,6 +9,8 @@ struct Button
   bool active;
   bool release_delaying;
   bool pressed;
+  bool no_led;
+  bool pressed_flag; // writable; external code should lower
   unsigned int delay_count;
   uint32_t last_press_time;
 };
