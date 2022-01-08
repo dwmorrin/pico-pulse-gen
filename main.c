@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "hardware/adc.h"
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
@@ -6,8 +7,7 @@
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array[0]))
 
-// TODO vary this with an analog pot - it is the tempo control
-#define DELAY_MS 50
+uint tempo_delay_ms = 0;
 
 // map of the GPIO pins
 enum PIN_ASSIGN
@@ -38,7 +38,8 @@ enum PIN_ASSIGN
     NOT_USED,
     NOT_USED_,
     BUILT_IN_LED,
-    READ_WRITE
+    READ_WRITE,
+    TEMPO_POT,
 };
 
 #define PATTERN_LENGTH 8
@@ -98,7 +99,7 @@ int64_t onHalfBeat(alarm_id_t id, void *data)
         (1 << patterns[1].pin_out) |
         (1 << patterns[2].pin_out) |
         (1 << clock.pin_out));
-    add_alarm_in_ms(DELAY_MS, onBeat, 0, true);
+    add_alarm_in_ms(tempo_delay_ms, onBeat, 0, true);
     return 0;
 }
 
@@ -114,7 +115,7 @@ int64_t onBeat(alarm_id_t id, void *data)
         mask |= (1 << patterns[2].pin_out);
     gpio_set_mask(mask);
     pattern_index = (pattern_index + 1) % PATTERN_LENGTH;
-    add_alarm_in_ms(DELAY_MS, onHalfBeat, 0, true);
+    add_alarm_in_ms(tempo_delay_ms, onHalfBeat, 0, true);
     return 0;
 }
 
@@ -138,6 +139,14 @@ void Pattern_Setup()
     gpio_set_dir(READ_WRITE, GPIO_IN);
 }
 
+#define MIN_DELAY_MS 50.0
+#define MAX_DELAY_MS 1000.0
+
+uint tempo_map(uint16_t adc_value)
+{
+    return (MIN_DELAY_MS-MAX_DELAY_MS)/4095.0 * adc_value + MAX_DELAY_MS;
+}
+
 int main()
 {
     stdio_init_all();
@@ -156,12 +165,18 @@ int main()
 
     Pattern_Setup();
 
+    adc_init();
+    adc_gpio_init(TEMPO_POT);
+    adc_select_input(1);
+    tempo_delay_ms = tempo_map(adc_read());
+
     alarm_id_t alarm_id = add_alarm_in_ms(0, onBeat, 0, true);
 
     while (1)
     {
         for_each_button(program_btns, ARRAY_LENGTH(program_btns), ButtonUpdate);
         Pattern_Update(program_btns, ARRAY_LENGTH(program_btns));
+        tempo_delay_ms = tempo_map(adc_read());
     }
 }
 

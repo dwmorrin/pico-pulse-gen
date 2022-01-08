@@ -16,4 +16,7 @@ add_executable(pulse_gen
 )
 pico_enable_stdio_usb(pulse_gen 1)
 pico_add_extra_outputs(pulse_gen)
-target_link_libraries(pulse_gen pico_stdlib)
+target_link_libraries(pulse_gen
+  pico_stdlib
+  hardware_adc
+)
