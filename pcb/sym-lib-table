@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "slide-switch")(type "KiCad")(uri "${KIPRJMOD}/slide-switch.kicad_sym")(options "")(descr ""))
+)

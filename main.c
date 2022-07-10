@@ -106,13 +106,9 @@ int64_t onHalfBeat(alarm_id_t id, void *data)
 int64_t onBeat(alarm_id_t id, void *data)
 {
     uint32_t mask = (1 << clock.pin_out);
-    // unrolled loop to be as fast as possible, untested if necessary
-    if (patterns[0].state[pattern_index])
-        mask |= (1 << patterns[0].pin_out);
-    if (patterns[1].state[pattern_index])
-        mask |= (1 << patterns[1].pin_out);
-    if (patterns[2].state[pattern_index])
-        mask |= (1 << patterns[2].pin_out);
+    for (int i = 0; i < 3; ++i)
+        if (patterns[i].state[pattern_index])
+            mask |= (1 << patterns[i].pin_out);
     gpio_set_mask(mask);
     pattern_index = (pattern_index + 1) % PATTERN_LENGTH;
     add_alarm_in_ms(tempo_delay_ms, onHalfBeat, 0, true);
